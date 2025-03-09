@@ -7,6 +7,8 @@
 #include "angle_sensor.h"
 #include "angle_control.h"
 #include "pid_controller.h"
+#include <string.h>
+#include <math.h>
 
 /* 系统状态定义 */
 typedef enum {
@@ -32,6 +34,14 @@ static WorkMode_TypeDef g_workMode;            // 工作模式
 static float g_targetAngle = 0.0f;            // 目标角度
 static uint32_t g_modeStartTime = 0;          // 模式开始时间
 
+/* 显示缓冲区，用于存储上一次显示的内容 */
+static char g_lastDisplayBuf[8][32];  // 8行显示，每行最多32个字符
+static SystemState_TypeDef g_lastSystemState = STATE_MENU;  // 上一次的系统状态，初始化为菜单状态
+static WorkMode_TypeDef g_lastWorkMode = MODE_IDLE;        // 上一次的工作模式，初始化为空闲模式
+static float g_lastTargetAngle = -1.0f;              // 上一次显示的目标角度
+static float g_lastCurrentAngle = -1.0f;             // 上一次显示的当前角度
+static uint32_t g_lastElapsedTime = 0xFFFFFFFF;      // 上一次显示的经过时间
+
 /* 函数声明 */
 static void System_Init(void);
 static void Timer_Init(void);
@@ -39,7 +49,7 @@ static void UserInterface_Process(void);
 static void ProcessKeys(void);
 static void MenuManager(void);
 static void ConfigureControlMode(WorkMode_TypeDef mode);
-static void DisplayStatus(void);
+void DisplayStatus(void);
 
 /*
  * @brief 
@@ -54,7 +64,6 @@ static void System_Init(void)
     delay_init();
     uart_init(115200);
     KEY_Init();
-    OLED_Init();
     
     // 初始化角度控制系统
     ANGLE_CONTROL_Init(&g_angle_control, CONTROL_MODE_IDLE);
@@ -122,11 +131,14 @@ int main(void)
 {
     // 系统初始化
     System_Init();
-    
+    delay_ms(100);
+    OLED_Init();
+	OLED_ColorTurn(0);//0正常显示，1 反色显示
+    OLED_DisplayTurn(0);//0正常显示 1 屏幕翻转显示
     // 显示欢迎信息
-    OLED_Clear();
-    OLED_ShowString(0, 0, "Wind Panel Control", 12, 1);
-    OLED_ShowString(0, 2, "System Ready", 12, 1);
+    OLED_ShowString(0, 0, (u8 *)"Wind Panel Control", 12, 1);
+    OLED_ShowString(0, 2, (u8 *)"System Ready", 12, 1);
+    OLED_Refresh();      // 确保信息显示后刷新
     printf("Wind Panel Control System Started\r\n");
     delay_ms(1000);
     
@@ -136,8 +148,7 @@ int main(void)
         // 用户交互处理
         UserInterface_Process();
         
-        // 状态显示更新
-        DisplayStatus();
+        DisplayStatus();  // 显示状态更新
         
         // 延时
         delay_ms(10);
@@ -164,9 +175,10 @@ static void ProcessKeys(void)
 {
     uint8_t key = KEY_Scan();
     if(key == KEY_NONE) return;
-    
+    printf("Key: %d\r\n", key);
     switch(g_systemState)
     {
+
         case STATE_MENU:
             // 模式选择
             if(key == KEY_UP || key == KEY_DOWN)
@@ -289,64 +301,117 @@ static void ConfigureControlMode(WorkMode_TypeDef mode)
   * @param  无
   * @retval 无
   */
-static void DisplayStatus(void)
+void DisplayStatus(void)
 {
-    char buf[32];
+    char buf[8][32];  // 临时缓冲区，存储当前要显示的内容
     float current_angle = ANGLE_SENSOR_GetAngle();
+    uint32_t elapsed = 0;
+    uint8_t needUpdate = 0;  // 标记是否需要更新显示，0=不需要，1=需要
+    uint8_t i;
     
-    OLED_Clear();
+    // 清空临时缓冲区
+    for(i = 0; i < 8; i++) {
+        memset(buf[i], 0, 32);
+    }
     
+    // 检查系统状态或工作模式是否变化
+    if(g_systemState != g_lastSystemState || g_workMode != g_lastWorkMode) {
+        needUpdate = 1;
+    }
+    
+    // 检查角度是否变化（允许0.1度的误差）
+    if(fabs(current_angle - g_lastCurrentAngle) > 0.1f || fabs(g_targetAngle - g_lastTargetAngle) > 0.1f) {
+        needUpdate = 1;
+    }
+    
+    // 根据系统状态填充临时缓冲区
     switch(g_systemState)
     {
         case STATE_MENU:
-            OLED_ShowString(0, 0, (u8 *)"Select Mode:", 12, 1);
+            strcpy(buf[0], "Select Mode:");
             switch(g_workMode)
             {
                 case MODE_IDLE:
-                    OLED_ShowString(0, 2, (u8 *)"Idle Mode", 12, 1);
+                    strcpy(buf[2], "Idle Mode");
                     break;
                 case MODE_SINGLE_FAN_45DEG:
-                    OLED_ShowString(0, 2, (u8 *)"Single Fan 45", 12, 1);
+                    strcpy(buf[2], "Single Fan 45");
                     break;
                 case MODE_SINGLE_FAN_ANY:
-                    OLED_ShowString(0, 2, (u8 *)"Single Fan Any", 12, 1);
+                    strcpy(buf[2], "Single Fan Any");
                     break;
                 case MODE_DUAL_FAN_ANY:
-                    OLED_ShowString(0, 2, (u8 *)"Dual Fan Any", 12, 1);
+                    strcpy(buf[2], "Dual Fan Any");
                     break;
                 case MODE_DUAL_FAN_SEQUENCE:
-                    OLED_ShowString(0, 2, (u8 *)"Sequence Mode", 12, 1);
+                    strcpy(buf[2], "Sequence Mode");
                     break;
             }
             break;
             
         case STATE_ANGLE_SETTING:
-            OLED_ShowString(0, 0, (u8 *)"Set Angle:", 12, 1);
-            sprintf(buf, "%.1f", g_targetAngle);
-            OLED_ShowString(0, 2, (u8 *)buf, 12, 1);
+            strcpy(buf[0], "Set Angle:");
+            sprintf(buf[2], "%.1f", g_targetAngle);
             break;
             
         case STATE_RUNNING:
-            OLED_ShowString(0, 0, (u8 *)"Running", 12, 1);
-            sprintf(buf, "Cur:%.1f", current_angle);
-            OLED_ShowString(0, 2, (u8 *)buf, 12, 1);
-            sprintf(buf, "Tar:%.1f", g_targetAngle);
-            OLED_ShowString(0, 4, (u8 *)buf, 12, 1);
+            strcpy(buf[0], "Running");
+            sprintf(buf[2], "Cur:%.1f", current_angle);
+            sprintf(buf[4], "Tar:%.1f", g_targetAngle);
             
             if(g_workMode == MODE_SINGLE_FAN_45DEG)
             {
                 // 显示10秒计时
-                uint32_t elapsed = (ANGLE_CONTROL_GetTime() - g_modeStartTime) / 1000;
+                elapsed = (ANGLE_CONTROL_GetTime() - g_modeStartTime) / 1000;
                 if(elapsed <= 10)
                 {
-                    sprintf(buf, "Time:%ds", (int)elapsed);
-                    OLED_ShowString(0, 6, (u8 *)buf, 12, 1);
+                    sprintf(buf[6], "Time:%ds", (int)elapsed);
+                    if(elapsed != g_lastElapsedTime) {
+                        needUpdate = 1;
+                    }
                 }
             }
             break;
             
         default:
             break;
+    }
+    
+    // 比较新旧缓冲区内容，检查是否需要更新
+    if(!needUpdate) {
+        for(i = 0; i < 8; i++) {
+            if(strcmp(buf[i], g_lastDisplayBuf[i]) != 0) {
+                needUpdate = 1;
+                break;
+            }
+        }
+    }
+    
+    // 如果需要更新，则进行OLED显示更新
+    if(needUpdate) {
+        OLED_Clear();
+        
+        // 将缓冲区内容显示到OLED
+        for(i = 0; i < 8; i += 2) {
+            if(buf[i][0] != '\0') {
+                OLED_ShowString(0, i, (u8 *)buf[i], 12, 1);
+            }
+        }
+        
+        // 保存当前显示内容到上一次的缓冲区
+        for(i = 0; i < 8; i++) {
+            strcpy(g_lastDisplayBuf[i], buf[i]);
+        }
+        
+        // 保存当前状态
+        g_lastSystemState = g_systemState;
+        g_lastWorkMode = g_workMode;
+        g_lastCurrentAngle = current_angle;
+        g_lastTargetAngle = g_targetAngle;
+        g_lastElapsedTime = elapsed;
+        
+        // 刷新屏幕
+        OLED_Refresh();
     }
 }
 

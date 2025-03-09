@@ -39,3 +39,5 @@
 ..\obj\main.o: ..\Hardware\angle_sensor\angle_sensor.h
 ..\obj\main.o: ..\Algorithm\angle_control.h
 ..\obj\main.o: ..\Algorithm\pid_controller.h
+..\obj\main.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+..\obj\main.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\math.h

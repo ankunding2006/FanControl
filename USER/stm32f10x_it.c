@@ -25,10 +25,10 @@
 #include "stm32f10x_it.h" 
 #include "angle_control.h"  // 添加角度控制头文件
 
-
+extern void DisplayStatus(void);
 
 /* 定义控制相关变量 */
-extern AngleControl_TypeDef g_angle_control;  // 假设在main.c中定义了全局控制结构体
+extern AngleControl_TypeDef g_angle_control;
 
 void NMI_Handler(void)
 {
@@ -104,9 +104,27 @@ void TIM3_IRQHandler(void)
     {
         /* 清除中断标志位 */
         TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
-        
         /* 调用角度控制处理函数 */
         ANGLE_CONTROL_Process(&g_angle_control);
+    }
+}
+
+/**
+  * @brief  定时器4中断服务函数
+  * @param  无
+  * @retval 无
+  */
+void TIM4_IRQHandler(void)
+{
+    /* 检查是否是更新中断 */
+    if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
+    {
+        /* 清除中断标志位 */
+        TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+        
+        // 状态显示更新
+        // 例如：角度传感器数据采集或其他2ms周期任务
+        
     }
 }
 

@@ -7,6 +7,7 @@
 
 #include "KEY.h"
 #include "delay.h"
+#include "usart.h"
 
 /* 按键状态结构体 */
 typedef struct {
@@ -95,7 +96,7 @@ static uint8_t KEY_ReadPin(uint8_t key)
         default:
             break;
     }
-    
+    //if(state == 2) printf("Key: %d\r\n", key);
     return state;
 }
 

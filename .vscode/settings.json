@@ -2,6 +2,8 @@
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "key.h": "c",
-        "angle_control.h": "c"
+        "angle_control.h": "c",
+        "sys.h": "c",
+        "oled.h": "c"
     }
 }

@@ -23,8 +23,8 @@ AngleSensorStatus_TypeDef ANGLE_SENSOR_Init(void)
     // 使能时钟
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_ADC1, ENABLE);
     
-    // 配置GPIO
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    // 配置GPIO - 修改为PA3
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
@@ -38,7 +38,8 @@ AngleSensorStatus_TypeDef ANGLE_SENSOR_Init(void)
     ADC_InitStructure.ADC_NbrOfChannel = 1;
     ADC_Init(ADC1, &ADC_InitStructure);
 
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_0, 1, ADC_SampleTime_55Cycles5);
+    // 修改为ADC通道3
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_3, 1, ADC_SampleTime_55Cycles5);
     ADC_Cmd(ADC1, ENABLE);
 
     // ADC校准
@@ -51,7 +52,6 @@ AngleSensorStatus_TypeDef ANGLE_SENSOR_Init(void)
 
     return ANGLE_SENSOR_OK;
 }
-
 /**
   * @brief  获取当前角度值
   * @retval float: 当前角度值，范围[-90, 90]度

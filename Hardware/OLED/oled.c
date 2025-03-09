@@ -449,23 +449,23 @@ void OLED_ShowPicture(u8 x,u8 y,u8 sizex,u8 sizey,u8 BMP[],u8 mode)
 void OLED_Init(void)
 {
 	GPIO_InitTypeDef  GPIO_InitStructure;
- 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOG|RCC_APB2Periph_GPIOD, ENABLE);	 //使能A端口时钟
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;	 
+ 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOG|RCC_APB2Periph_GPIOD|RCC_APB2Periph_GPIOC, ENABLE);	 //使能端口时钟
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;	 
  	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; 		 //推挽输出
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;//速度50MHz
- 	GPIO_Init(GPIOG, &GPIO_InitStructure);	  //初始化GPIOG12
- 	GPIO_SetBits(GPIOG,GPIO_Pin_12);
+ 	GPIO_Init(GPIOG, &GPIO_InitStructure);	  //初始化GPIOG13
+ 	GPIO_SetBits(GPIOG,GPIO_Pin_13);
 	
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
  	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; 		 //推挽输出
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;//速度50MHz
- 	GPIO_Init(GPIOD, &GPIO_InitStructure);	  //初始化GPIOD1,5,15
- 	GPIO_SetBits(GPIOD,GPIO_Pin_5);
+ 	GPIO_Init(GPIOC, &GPIO_InitStructure);	  //初始化GPIOC0
+ 	GPIO_SetBits(GPIOC,GPIO_Pin_0);
 	
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
  	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; 		 //推挽输出
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;//速度50MHz
- 	GPIO_Init(GPIOD, &GPIO_InitStructure);	  //初始化GPIOD1,5,15
+ 	GPIO_Init(GPIOD, &GPIO_InitStructure);	  //初始化GPIOD4
  	GPIO_SetBits(GPIOD,GPIO_Pin_4);
 	
 	OLED_RES_Clr();

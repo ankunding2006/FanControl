@@ -15,9 +15,9 @@
 #define KEY1_PIN        GPIO_Pin_1   // MODE按键 - 模式选择，从PA0改为PB1
 #define KEY1_RCC        RCC_APB2Periph_GPIOB  // 时钟也需要修改
 
-#define KEY2_PORT       GPIOB
-#define KEY2_PIN        GPIO_Pin_2   // START/STOP按键，从PA1改为PB2
-#define KEY2_RCC        RCC_APB2Periph_GPIOB
+#define KEY2_PORT       GPIOC
+#define KEY2_PIN        GPIO_Pin_7   // START/STOP按键，从PA1改为PB2
+#define KEY2_RCC        RCC_APB2Periph_GPIOC
 
 // 其他按键定义保持不变
 #define KEY3_PORT       GPIOA
